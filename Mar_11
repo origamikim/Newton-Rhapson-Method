@@ -1,0 +1,69 @@
+# 20215047 Yooseung Kim
+# Language  : python 3
+import sympy as sym
+import numpy as np
+import scipy as sp
+from scipy.misc import derivative
+import matplotlib.pyplot as plt
+import time
+x = sym.Symbol('x')  # use x for the symbolic calculation
+
+def Newton(f, initial_guess, printout=False):
+    start = time.time() #to check run-time
+    def newton(f=f,initial_guess=initial_guess): #define the method
+        global guess #using for function Newton
+        global guess_val #using for function Newton
+        guess = [initial_guess] #estimated x_values
+        guess_val = [] #f(x) for estimated x_values
+        i = 0 #repeats: 
+        try:
+            test=f(1) #for lambda expression
+            guess_val.append(f(initial_guess)) #add x1 in the x_values 
+            while abs(guess_val[i]) > 10**(-8) and time.time()-start<1: #the end condition 
+                if abs(derivative(f,guess[i]))>10**(-8) and i<1000 : #if derivative = 0: doesn't work
+                    k = float(guess[i] -guess_val[i] / float(derivative(f,guess[i])))
+                                                # xn+1 = xn - f(xn)/f'(xn); the x-intercept of the tangential line
+                    guess.append(round(k,7)) #add xn+1 in the x_values and round off xn+1 on the 8th decimal point
+                    guess_val.append(f(k)) # add f(xn+1) in the x_values
+                    i += 1
+                if len(guess) > 1 :
+                    if guess[-1] == guess[-2]: # if xn == xn+1; i.e. doesn't change: decide it as the root
+                        break;  #end the loop
+        except TypeError:
+            df=f.diff(x) #for sympy(symbolic) expression  ; same as the lambda expression
+            guess_val.append(f.subs(x,initial_guess))
+            while abs(guess_val[i]) > 10**(-8) and time.time()-start<1:
+                if abs(float(df.subs(x,guess[i])))>10**(-8) and i<1000:
+                    k = float(guess[i] -
+                              guess_val[i] / float(df.subs(x, guess[i])))
+                    guess.append(round(k,7))
+                    guess_val.append(f.subs(x, k))
+                    i += 1  
+                if len(guess) > 1 :
+                    if guess[-1] == guess[-2]:
+                        break; 
+        if abs(guess_val[-1])<10**(-8) or guess[-1] == guess[-2]: #when the method succesfully applied
+            return guess, guess_val
+        else:  #when the error occured or there is no root
+            print(guess)
+            return None
+    try:
+        xs ,ys = newton()  #actually calculate by using newton() 
+        if printout == True:
+            print('x_values :',xs) # show the process of getting the root 
+            print('errors :',ys ) #show the error decreases as n increases
+        return round(xs[-1]) # the final root we found, and it is rounded on the 8th decimal point. 
+    except TypeError:
+        print("Can't Find the Root") 
+        return None
+        
+        
+# example for Stewart Calculus 8th edition 
+# Section 3.4 No.17
+fx = 3*sym.cos(x) - x -1
+sym.plot(fx,(x,-7.5,7.5)
+Newton(gx,-4,printout=True)
+Newton(gx,3,printout=True)
+Newton(gx,0,printout=True)
+
+
