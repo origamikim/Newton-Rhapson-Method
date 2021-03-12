@@ -52,7 +52,7 @@ def Newton(f, initial_guess, printout=False):
         if printout == True:
             print('x_values :',xs) # show the process of getting the root 
             print('errors :',ys ) #show the error decreases as n increases
-        return round(xs[-1]) # the final root we found, and it is rounded on the 8th decimal point. 
+        return round(xs[-1],8) # the final root we found, and it is rounded on the 8th decimal point. 
     except TypeError:
         print("Can't Find the Root") 
         return None
