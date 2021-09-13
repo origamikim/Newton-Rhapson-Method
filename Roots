@@ -1,0 +1,324 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# #  Modules
+
+# In[49]:
+
+
+import numpy as np
+import sympy as sym
+x=sym.Symbol('x')
+import time
+import scipy as sp
+from scipy.misc import derivative
+import matplotlib.pyplot as plt
+
+
+# # Bisectional Method
+
+# In[2]:
+
+
+def bisectional(f, a, b):
+    try:
+        test = f(0)
+        m = (a + b) / 2
+        if f(m) == 0:
+            return m, m
+        elif f(m) * f(a) < 0:
+            return a, m
+        elif f(m) * f(b) < 0:
+            return m, b
+
+    except TypeError:
+        m = (a + b) / 2
+        if f.subs(x, m) == 0:
+            return m, m
+        elif f.subs(x, m) * f.subs(x, a) < 0:
+            return a, m
+        elif f.subs(x, m) * f.subs(x, b) < 0:
+            return m, b
+def Bisectional(f, a=-50, b=50, TOL=10**(-10)):
+    start = time.time()
+    iteration = 0
+    roots = []
+    for i in range(10 * a, 10 * b):
+        try:
+            test = f(0)
+            if f(i / 10) == 0:
+                roots.append(i)
+            elif f(i / 10) * f(i / 10 + 0.1) < 0:
+                x0, x1 = bisectional(f, i/10, i/10 + 0.1)
+                while abs(x0 - x1) > TOL:
+                    x0, x1 = bisectional(f, x0, x1)
+                    iteration += 1
+                roots.append(x0)
+        except TypeError:
+            if f.subs(x, i / 10) == 0:
+                roots.append(i)
+            elif f.subs(i / 10) * f(i / 10 + 0.1) < 0:
+                x0, x1 = bisectional(f, i/10, i/10 + 0.1)
+                while abs(x0 - x1) > TOL:
+                    x0, x1 = bisectional(f, x0, x1)
+                    iteration += 1
+                roots.append(x0)
+
+    roots = list(set(roots))
+    end=time.time()
+    avg_iter=iteration/len(roots)
+    return roots, avg_iter, end-start
+
+
+# # Intermediate Value Theorem
+
+# In[3]:
+
+
+def IVT(f, a=-50, b=50, integer=True):
+    start=time.time()
+    xs = []
+    def ivt(f, p, k):
+        try:
+            test=f(2)
+            if k > 10**-9:
+                for i in range(0, 10):
+                    try:
+                        if f(p + i * k) * f( p + (i + 1) * k) < 0:
+                            semi_root = p + i * k
+                            return ivt(f, semi_root, k / 10)
+                    except ZeroDivisionError:
+                        continue
+            else:
+                rt = p
+                return rt
+        except TypeError:
+            if k > 10**-9:
+                for i in range(0, 10):
+                    try:
+                        if f.subs(x,p + i * k) * f.subs(x,p + (i + 1) * k) < 0:
+                            semi_root = p + i * k
+                            return ivt(f, semi_root, k / 10)
+                    except ZeroDivisionError:
+                        continue
+            else:
+                rt = p
+                return rt
+
+    try:
+        test=f.subs(x,1)
+        if integer == True:
+            for i in range(10 * a, 10 * b):
+                try:
+                    if f.subs(x, i / 10) == 0:
+                        xs.append(i / 10)
+                    elif f.subs({x: i / 10}) * f.subs({x: i / 10 + 0.1}) < 0:
+                        rt = ivt(f, i / 10, 0.01)
+                        xs.append(rt)
+                    else:
+                        pass
+                except ZeroDivisionError:
+                    if f.subs(x, i / 10 + 10**
+                              (-11)) * f.subs(x, i / 10 + 0.1 + 10**(-11)) < 0:
+                        rt = ivt(f, i / 10, 0.01)
+                        xs.append(rt)
+        elif integer == False:
+            for i in range(10**5 * a, 10**5 * b):
+                try:
+                    if f.subs(x, i / 10**5) == 0:
+                        x.append(i / 10**5)
+                    elif f.subs(x, i / 10**5) * f.subs(x, (i + 1) / 10**5) < 0:
+                        rt = ivt(f, i / 10**5, 10**(-5))
+                        xs.append(rt)
+                    else:
+                        pass
+                except ZeroDivisionError:
+                    continue
+    except AttributeError:
+        if integer == True:
+            for i in range(10 * a, 10 * b):
+                try:
+                    if f(i / 10) == 0:
+                        xs.append(i / 10)
+                    elif f( i / 10) * f( i / 10 + 0.1) < 0:
+                        rt = ivt(f, i / 10, 0.01)
+                        xs.append(rt)
+                    else:
+                        pass
+                except ZeroDivisionError:
+                    if f(i / 10 + 10**(-11)) * f(i / 10 + 0.1 + 10**(-11)) < 0:
+                        rt = ivt(f, i / 10, 0.01)
+                        xs.append(rt)
+        elif integer == False:
+            for i in range(10**5 * a, 10**5 * b):
+                try:
+                    if f( i / 10**5) == 0:
+                        x.append(i / 10**5)
+                    elif f( i / 10**5) * f((i + 1) / 10**5) < 0:
+                        rt = ivt(f, i / 10**5, 10**(-5))
+                        xs.append(rt)
+                    else:
+                        pass
+                except ZeroDivisionError:
+                    continue
+    end=time.time()
+    return xs, end-start
+
+
+# #  Newton-Raphson Method
+
+# In[53]:
+
+
+def Newton(f, initial_guess, printout=False):
+   start=time.time()
+   def newton(f=f,initial_guess=initial_guess):
+       global guess
+       global guess_val
+       guess = [initial_guess] #estimated x_values
+       guess_val = [] #f(x) for estimated x_values
+       i = 0 #repeats: 
+       try:
+           test=f(1) #for lambda expression
+           guess_val.append(f(initial_guess))
+           while abs(guess_val[i]) > 10**(-11) and time.time()-start<0.05:
+
+               if abs(derivative(f,guess[i]))>10**(-10) and i<1000 :
+                   k = float(guess[i] -
+                             guess_val[i] / float(derivative(f,guess[i])))
+                   guess.append(k)
+                   guess_val.append(f( k))
+                   i += 1
+               
+       except TypeError:
+           df=f.diff(x) #for sympy(symbolic) expression 
+           guess_val.append(f.subs(x,initial_guess))
+           while abs(guess_val[i]) > 10**(-11) and time.time()-start<0.05:
+               if abs(float(df.subs(x,guess[i])))>10**(-10) and i<1000:
+                   k = float(guess[i] -
+                             guess_val[i] / float(df.subs(x, guess[i])))
+                   guess.append(k)
+                   guess_val.append(f.subs(x, k))
+                   i += 1  
+       if abs(guess_val[-1])<10**(-5):
+           return guess, guess_val
+       else: 
+           return None
+   try:
+       xs ,ys = newton()
+       if printout == True:
+           print('x_values :',xs)
+           print('y_values :',ys)
+       return round(xs[-1],10)
+   except TypeError:
+       return None
+
+
+# In[59]:
+
+
+fx = -x*sym.cos(x) -2*sym.sin(x)
+sym.plot(fx)
+sym.plot(x*sym.cos(x))
+Newton(fx,1)
+
+
+# # Newton-Raphson+IVT Method
+
+# In[50]:
+
+
+def NRI(fx, low=-200, up=200, printout=False):
+    roots = []
+    exp_roots = []
+    start=time.time()
+    try:
+        test = fx(1)
+        for i in range(low, up):
+            flow = fx(i / 10)
+            fup = fx((i + 1) / 10)
+            if flow == 0:
+                roots.append(i / 10)
+            elif flow * fup < 0:
+                exp_roots.append(i / 10)
+            else:
+                pass
+    except TypeError:
+        for i in range(low, up):
+            flow = fx.subs(x, i / 10)
+            fup = fx.subs(x, (i + 1) / 10)
+            if flow == 0:
+                roots.append(i / 10)
+            elif flow * fup < 0:
+                exp_roots.append(i / 10)
+            else:
+                pass
+    for i in exp_roots:
+        rmid = Newton(fx, i + 0.05, False)
+        roots.append(rmid)
+    roots = list(sorted(set(roots)))
+    if printout == True:
+        try:
+            test = fx.subs(x, 1)
+            if len(roots) > 1:
+                sym.plot(fx, (x, roots[0] - 2, roots[-1] + 2), ylim=(-20, 20))
+            elif len(roots) == 1:
+                sym.plot(fx, (x, roots[0] - 2, roots[0] + 2), ylim=(-20, 20))
+            elif len(roots) == 0:
+                sym.plot(fx, ylim=(-20, 20))
+        except AttributeError:
+            xs = np.linspace(roots[0] - 3, roots[-1] + 3, 1000)
+            ys = [fx(i) for i in xs]
+            plt.plot(xs,ys)
+    if len(roots)==0:
+        root_p=Newton(fx,100000)
+        root_n=Newton(fx,-100000)
+        if type(root_p)==float and type(root_n)==float:
+            if abs(root_p-root_n)<0.001:
+                roots.append((root_p+root_n)/2)
+            else:
+                roots.append(root_p)
+                roots.append(root_n)
+        elif type(root_p)==float and type(root_n)==NoneType:
+            roots.append(root_p)
+        elif type(root_p)==NoneType and type(root_n)==float:
+            roots.append(root_n)
+        else:
+            pass
+    roots=list(set(roots))
+    end=time.time()
+    return roots, end-start
+
+
+# # Time Comparison
+
+# In[ ]:
+
+
+fs=[]
+for _ in range(6):
+    c=np.random.randint(0,15,10)
+    fx= lambda x : c[0]*x**c[1]-c[2]*x**c[3]+c[4]*x**c[7]-c[8]*x**c[9]
+    fs.append(fx)
+print(fs)
+r_start=time.time()
+rnx=[]
+for j in fs:
+    rnx.append(len(NRI(j,printout=False)[0]))
+    print(NRI(j,printout=False)[0])
+r_end=time.time()
+print(r_end-r_start)
+mnx=[]
+m_start=time.time()
+for j in fs:
+    mnx.append(len(IVT(j)[0]))
+    print(IVT(j)[0])
+m_end=time.time()
+rnx=np.array(rnx)
+mnx=np.array(mnx)
+print(m_end-m_start)
+print(rnx)
+print(mnx)
+
+
+
